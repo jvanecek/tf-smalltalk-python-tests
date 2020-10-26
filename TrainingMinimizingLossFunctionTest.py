@@ -26,10 +26,13 @@ class TrainingMinimizingLossTest(object):
 
         return model
 
-    def _assertHasTheSameElementsThat(self, aTensorFlowArray, anExpectedArray ):
+    def _assertElementsAreAllClose(self, anArray, anExpectedArray):
         np.testing.assert_allclose(
-            aTensorFlowArray.numpy(), anExpectedArray,
+            anArray, anExpectedArray,
             rtol=1e-5, atol=0)
+
+    def _assertHasTheSameElementsThat(self, aTensorFlowArray, anExpectedArray ):
+        self._assertElementsAreAllClose( aTensorFlowArray.numpy(), anExpectedArray )
 
     def _subclassResponsibility(self):
         raise NotImplementedError('Subclass responsibility')
@@ -53,6 +56,9 @@ class TrainingMinimizingLossTest(object):
         self._subclassResponsibility()
 
     def expectedLossValueThroughTenEpochs(self):
+        self._subclassResponsibility()
+
+    def expectedLossValueThroughTenEpochsInBatches(self):
         self._subclassResponsibility()
 
     def expectedAccuracyThroughTenEpochs(self):
@@ -101,9 +107,26 @@ class TrainingMinimizingLossTest(object):
         model.compile(optimizer=self.optimizer, loss=loss )
         result = model.fit(self.inputTensor, self.targetTensor(), epochs=10)
 
-        np.testing.assert_allclose(
-            result.history['loss'],  self.expectedLossValueThroughTenEpochs(),
-            rtol=1e-5, atol=0)
+        self._assertElementsAreAllClose( result.history['loss'], self.expectedLossValueThroughTenEpochs() )
+
+    def testValidationLossValueThroughTenEpochs(self):
+        model = self._modelWithTwoOutputUnits()
+
+        loss = self.loss()
+        model.compile(optimizer=self.optimizer, loss=loss )
+        result = model.fit(self.inputTensor, self.targetTensor(), epochs=10 )
+
+        print( result.history )
+        self._assertElementsAreAllClose( result.history['loss'], self.expectedLossValueThroughTenEpochs() )
+
+    def testLossValueThroughTenEpochsInBatches(self):
+        model = self._modelWithTwoOutputUnits()
+
+        loss = self.loss()
+        model.compile(optimizer=self.optimizer, loss=loss )
+        result = model.fit(self.inputTensor, self.targetTensor(), epochs=10, batch_size=1, shuffle=False)
+
+        self._assertElementsAreAllClose( result.history['loss'],  self.expectedLossValueThroughTenEpochsInBatches() )
 
     def testAccuracyThroughTenEpochs(self):
         model = self._modelWithTwoOutputUnits()
@@ -116,9 +139,7 @@ class TrainingMinimizingLossTest(object):
         model.compile(optimizer=self.optimizer, loss=loss, metrics=[metric] )
         result = model.fit(self.inputTensor, self.targetTensor(), epochs=10)
 
-        np.testing.assert_allclose(
-            result.history[metric_key],  self.expectedAccuracyThroughTenEpochs(),
-            rtol=1e-5, atol=0)
+        self._assertElementsAreAllClose( result.history[metric_key],  self.expectedAccuracyThroughTenEpochs() )
 
     def testWeightAfterOneEpoch(self):
         model = self._modelWithTwoOutputUnits()
@@ -165,6 +186,9 @@ class TrainingMinimizingMeanSquaredErrorTest(TrainingMinimizingLossTest, unittes
     def _computeLossUsing(self, loss, model):
         return loss( model(self.inputTensor), self.targetTensor() )
 
+    def expectedLossValueThroughTenEpochsInBatches(self):
+        return [0.29437 , 0.199865, 0.154427, 0.124853, 0.105107, 0.091094, 0.080579, 0.072316, 0.065578, 0.059923]
+
 class TrainingMinimizingCategoricalCrossEntropyTest(TrainingMinimizingLossTest, unittest.TestCase):
     def targetTensor(self):
         return super().expectedProbabilityByLabel
@@ -198,6 +222,9 @@ class TrainingMinimizingCategoricalCrossEntropyTest(TrainingMinimizingLossTest, 
     def _computeLossUsing(self, loss, model):
         return loss( self.targetTensor(), model(self.inputTensor) )
 
+    def expectedLossValueThroughTenEpochsInBatches(self):
+        return [0.89314 , 0.81182 , 0.758237, 0.716684, 0.682834, 0.654628, 0.630738, 0.610233, 0.592431, 0.576828]
+
 class TrainingMinimizingSparseCategoricalCrossEntropyTest(TrainingMinimizingLossTest, unittest.TestCase):
     def targetTensor(self):
         return super().expectedLabels
@@ -230,6 +257,9 @@ class TrainingMinimizingSparseCategoricalCrossEntropyTest(TrainingMinimizingLoss
 
     def _computeLossUsing(self, loss, model):
         return loss( self.targetTensor(), model(self.inputTensor) )
+
+    def expectedLossValueThroughTenEpochsInBatches(self):
+        return [0.864499, 0.649878, 0.570428, 0.517042, 0.474193, 0.438237, 0.407528, 0.380969, 0.357743, 0.337231]
 
 if __name__ == '__main__':
     unittest.main()
