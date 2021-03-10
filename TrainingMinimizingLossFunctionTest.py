@@ -41,7 +41,7 @@ class TrainingMinimizingLossTest(object):
         self._subclassResponsibility()
 
     def loss(self):
-        self._subclassResponsibility()
+        return self._subclassResponsibility()
 
     def expectedAccuracyAfterOneEpoch(self):
         self._subclassResponsibility()
@@ -74,7 +74,7 @@ class TrainingMinimizingLossTest(object):
         model.compile(optimizer=self.optimizer, loss=loss, metrics=['accuracy'])
         result = model.fit(self.inputTensor, self.targetTensor(), epochs=1)
 
-        assert( result.history['acc'] == self.expectedAccuracyAfterOneEpoch() )
+        assert( result.history['accuracy'] == self.expectedAccuracyAfterOneEpoch() )
 
     def testLogitsAfterOneEpoch(self):
         model = self._modelWithTwoOutputUnits()
@@ -116,7 +116,6 @@ class TrainingMinimizingLossTest(object):
         model.compile(optimizer=self.optimizer, loss=loss )
         result = model.fit(self.inputTensor, self.targetTensor(), epochs=10 )
 
-        print( result.history )
         self._assertElementsAreAllClose( result.history['loss'], self.expectedLossValueThroughTenEpochs() )
 
     def testLossValueThroughTenEpochsInBatches(self):
@@ -134,7 +133,7 @@ class TrainingMinimizingLossTest(object):
         loss = self.loss()
 
         metric = 'accuracy'
-        metric_key = 'acc'
+        metric_key = 'accuracy'
 
         model.compile(optimizer=self.optimizer, loss=loss, metrics=[metric] )
         result = model.fit(self.inputTensor, self.targetTensor(), epochs=10)
