@@ -7,6 +7,63 @@ from tensorflow import keras
 tf.compat.v1.disable_eager_execution()
 
 
+class CustomCallback(keras.callbacks.Callback):
+    """
+        Training Callbacks
+    """
+    def on_train_begin(self, logs=None):
+        print("\nStarting training; got logs: {}".format(logs))
+
+    def on_epoch_begin(self, epoch, logs=None):
+        print("\nStart epoch {} of training; got logs: {}".format(epoch, logs))
+
+    def on_train_batch_begin(self, batch, logs=None):
+        print("\n...Training: start of batch {}; got logs: {}".format(batch, logs))
+
+    def on_train_batch_end(self, batch, logs=None):
+        print("\n...Training: end of batch {}; got logs: {}".format(batch, logs))
+
+    def on_epoch_end(self, epoch, logs=None):
+        print("\nEnd epoch {} of training; got logs: {}".format(epoch, logs))
+
+    def on_train_end(self, logs=None):
+        print("\nStop training; got logs: {}".format(logs))
+
+    """ 
+        Validation Callbacks
+    """
+    def on_test_begin(self, logs=None):
+        print("\nStart testing; got logs: {}".format(logs))
+
+    def on_test_batch_begin(self, batch, logs=None):
+        print("\n...Evaluating: start of batch {}; got logs: {}".format(batch, logs))
+
+    def on_test_batch_end(self, batch, logs=None):
+        print("\n...Evaluating: end of batch {}; got logs: {}".format(batch, logs))
+
+    def on_test_end(self, logs=None):
+        print("\nStop testing; got logs: {}".format(logs))
+
+    """ 
+       Testing Callbacks
+   """
+    def on_predict_begin(self, logs=None):
+        keys = list(logs.keys())
+        print("\nStart predicting; got log keys: {}".format(keys))
+
+    def on_predict_batch_begin(self, batch, logs=None):
+        keys = list(logs.keys())
+        print("\n...Predicting: start of batch {}; got log keys: {}".format(batch, keys))
+
+    def on_predict_batch_end(self, batch, logs=None):
+        keys = list(logs.keys())
+        print("\n...Predicting: end of batch {}; got log keys: {}".format(batch, keys))
+
+    def on_predict_end(self, logs=None):
+        keys = list(logs.keys())
+        print("\nStop predicting; got log keys: {}".format(keys))
+
+
 class TrainingUsingOptimizationTest(object):
     inputTensor = np.array([
         [0, 0, 1],
@@ -126,7 +183,8 @@ class TrainingUsingOptimizationTest(object):
             self.inputTensor,
             self.expectedProbabilityByLabel,
             validation_data=(self.validationInputTensor, self.expectedValidationProbabilityByLabel),
-            epochs=5, batch_size=2, shuffle=False)
+            epochs=5, batch_size=2, shuffle=False,
+            callbacks=[CustomCallback()])
 
         self._assertElementsAreAllClose(
             summary.history['val_loss'],
