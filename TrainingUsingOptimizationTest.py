@@ -6,7 +6,6 @@ from tensorflow import keras
 
 tf.compat.v1.disable_eager_execution()
 
-
 class CustomCallback(keras.callbacks.Callback):
     """
         Training Callbacks
@@ -223,11 +222,13 @@ class TrainingUsingOptimizationTest(object):
 
     def testAccuracyMinimizingSparseCategoricalCrossEntropyInBatches(self):
         model = self._modelWithTwoOutputUnits()
-        model.compile(optimizer=self.optimizationAlgorithm(), loss=self.sparseCategoricalCrossEntropy(), metrics=['accuracy'])
+        model.compile(optimizer=self.optimizationAlgorithm(),
+                      loss=self.sparseCategoricalCrossEntropy(),
+                      metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
         summary = model.fit(self.inputTensor, self.expectedLabels, epochs=5, batch_size=2, shuffle=False)
 
         self._assertElementsAreAllClose(
-            summary.history['accuracy'],
+            summary.history['sparse_categorical_accuracy'],
             [0.25, 0.25, 0.25, 0.25, 0.25]
         )
 

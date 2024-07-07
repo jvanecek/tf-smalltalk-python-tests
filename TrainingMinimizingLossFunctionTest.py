@@ -1,10 +1,72 @@
 import unittest
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 
 from tensorflow.python.keras.utils import losses_utils
 
 tf.compat.v1.enable_eager_execution()
+
+class CustomCallback(keras.callbacks.Callback):
+    def on_train_begin(self, logs=None):
+        keys = list(logs.keys())
+        print("Starting training; got log keys: {}".format(keys))
+
+    def on_train_end(self, logs=None):
+        keys = list(logs.keys())
+        print("Stop training; got log keys: {}".format(keys))
+
+    def on_epoch_begin(self, epoch, logs=None):
+        keys = list(logs.keys())
+        print("Start epoch {} of training; got log keys: {}".format(epoch, keys))
+
+    def on_epoch_end(self, epoch, logs=None):
+        # keys = list(logs.keys())
+        # print("End epoch {} of training; got log keys: {}".format(epoch, keys))
+        print("\nKernel: {}".format(self.model.variables[0].numpy()))
+
+
+    def on_test_begin(self, logs=None):
+        keys = list(logs.keys())
+        print("Start testing; got log keys: {}".format(keys))
+
+    def on_test_end(self, logs=None):
+        keys = list(logs.keys())
+        print("Stop testing; got log keys: {}".format(keys))
+
+    def on_predict_begin(self, logs=None):
+        keys = list(logs.keys())
+        print("Start predicting; got log keys: {}".format(keys))
+
+    def on_predict_end(self, logs=None):
+        keys = list(logs.keys())
+        print("Stop predicting; got log keys: {}".format(keys))
+
+    def on_train_batch_begin(self, batch, logs=None):
+        keys = list(logs.keys())
+        print("...Training: start of batch {}; got log keys: {}".format(batch, keys))
+
+    def on_train_batch_end(self, batch, logs=None):
+        #keys = list(logs.keys())
+        #print("...Training: end of batch {}; got log keys: {}".format(batch, keys))
+        print("\nKernel: {}".format(self.model.variables[0].numpy()))
+
+    def on_test_batch_begin(self, batch, logs=None):
+        keys = list(logs.keys())
+        print("...Evaluating: start of batch {}; got log keys: {}".format(batch, keys))
+
+    def on_test_batch_end(self, batch, logs=None):
+        keys = list(logs.keys())
+        print("...Evaluating: end of batch {}; got log keys: {}".format(batch, keys))
+
+    def on_predict_batch_begin(self, batch, logs=None):
+        keys = list(logs.keys())
+        print("...Predicting: start of batch {}; got log keys: {}".format(batch, keys))
+
+    def on_predict_batch_end(self, batch, logs=None):
+        keys = list(logs.keys())
+        print("...Predicting: end of batch {}; got log keys: {}".format(batch, keys))
+
 
 class TrainingMinimizingLossTest(object):
     inputTensor = np.array( [
@@ -43,6 +105,9 @@ class TrainingMinimizingLossTest(object):
     def loss(self):
         return self._subclassResponsibility()
 
+    def accuracyMetric(self):
+        return self._subclassResponsibility()
+
     def expectedAccuracyAfterOneEpoch(self):
         self._subclassResponsibility()
 
@@ -67,14 +132,18 @@ class TrainingMinimizingLossTest(object):
     def _computeLossUsing( self, loss, model ):
         self._subclassResponsibility()
 
-    def testAccuracyAfterMeanSquaredError(self):
+    def testAccuracyAfterOneEpoch(self):
         model = self._modelWithTwoOutputUnits()
 
         loss = self.loss()
-        model.compile(optimizer=self.optimizer, loss=loss, metrics=['accuracy'])
+
+        metric = self.accuracyMetric()
+        metric_key = metric.name
+
+        model.compile(optimizer=self.optimizer, loss=loss, metrics=[metric])
         result = model.fit(self.inputTensor, self.targetTensor(), epochs=1)
 
-        assert( result.history['accuracy'] == self.expectedAccuracyAfterOneEpoch() )
+        assert( result.history[metric_key] == self.expectedAccuracyAfterOneEpoch() )
 
     def testLogitsAfterOneEpoch(self):
         model = self._modelWithTwoOutputUnits()
@@ -132,11 +201,11 @@ class TrainingMinimizingLossTest(object):
 
         loss = self.loss()
 
-        metric = 'accuracy'
-        metric_key = 'accuracy'
+        metric = self.accuracyMetric()
+        metric_key = metric.name
 
-        model.compile(optimizer=self.optimizer, loss=loss, metrics=[metric] )
-        result = model.fit(self.inputTensor, self.targetTensor(), epochs=10)
+        model.compile(optimizer=self.optimizer, loss=loss, metrics=[metric])
+        result = model.fit(self.inputTensor, self.targetTensor(), epochs=10, callbacks=[CustomCallback()])
 
         self._assertElementsAreAllClose( result.history[metric_key],  self.expectedAccuracyThroughTenEpochs() )
 
@@ -158,6 +227,9 @@ class TrainingMinimizingMeanSquaredErrorTest(TrainingMinimizingLossTest, unittes
 
     def loss(self):
         return tf.keras.losses.MeanSquaredError()
+
+    def accuracyMetric(self):
+        return tf.keras.metrics.CategoricalAccuracy()
 
     def expectedAccuracyAfterOneEpoch(self):
         return [0.5]
@@ -195,6 +267,9 @@ class TrainingMinimizingCategoricalCrossEntropyTest(TrainingMinimizingLossTest, 
     def loss(self):
         return tf.keras.losses.CategoricalCrossentropy(from_logits=True)
 
+    def accuracyMetric(self):
+        return tf.keras.metrics.CategoricalAccuracy()
+
     def expectedAccuracyAfterOneEpoch(self):
         return [0.5]
 
@@ -230,6 +305,9 @@ class TrainingMinimizingSparseCategoricalCrossEntropyTest(TrainingMinimizingLoss
 
     def loss(self):
         return tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+    def accuracyMetric(self):
+        return tf.keras.metrics.SparseCategoricalAccuracy()
 
     def expectedAccuracyAfterOneEpoch(self):
         return [0.25]

@@ -110,6 +110,46 @@ class TruncatedNormalInitializerTest(VariableInitializerTest, unittest.TestCase)
     def _expectedVectorValues(self):
         return [-0.275486, 0.131695, -0.44561]
 
+class RandomBinomial(tf.keras.initializers.Initializer):
+
+    def __init__(self, numberOfExperiments=1, probabilityOfSuccess=0.5, seed=None):
+        self.numberOfExperiments = numberOfExperiments
+        self.probabilityOfSuccess = probabilityOfSuccess
+        self.seed = seed
+
+    def __call__(self, shape, dtype=None):
+        return tf.random.stateless_binomial(shape, [self.seed, 0], self.numberOfExperiments, self.probabilityOfSuccess, output_dtype=dtype)
+
+    def get_config(self):  # To support serialization
+        return {'numberOfExperiments': self.numberOfExperiments, 'probabilityOfSucces': self.probabilityOfSucces}
+
+class RandomBinomialInitializerTest(VariableInitializerTest, unittest.TestCase):
+    def _createDefaultInitializer(self):
+        return RandomBinomial(seed=1)
+
+    def _createCustomInitializer(self):
+        return RandomBinomial(numberOfExperiments=10, probabilityOfSuccess=0.6)
+
+    def _expectedMatrixValues(self):
+        return [[1, 0, 0],
+                [1, 0, 0]]
+
+    def _expectedScalarValue(self):
+        return 1
+
+    def _expectedVectorValues(self):
+        return [7, 7, 6]
+
+    def testExample(self):
+        shape = [1024, 1024]
+        counts = [[10.] * shape[0]] * shape[1]
+        probs = [0.5] * shape[0]
+
+        with tf.device("cpu"):
+            g = tf.random.Generator.from_seed(1234).split(1)[0]
+            samples = g.binomial(shape=shape, counts=counts, probs=probs)
+
+        print( samples )
 
 if __name__ == '__main__':
     unittest.main()
