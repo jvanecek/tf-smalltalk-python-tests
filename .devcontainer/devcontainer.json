@@ -3,7 +3,7 @@
         "dockerfile": "Dockerfile",
         "context": ".."
     },
-    "remoteUser": "nonroot",
+    "remoteUser": "vscode",
     "customizations": {
         "vscode" : {
             "extensions": [
