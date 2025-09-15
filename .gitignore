@@ -1,3 +1,17 @@
 venv/
 .idea/
 .vscode/
+logs/*
+*.tar.gz
+
+# Python
+__pycache__/
+.mypy_cache/
+.cursorrules
+
+# Testing
+.pytest_cache/
+.~*.xls*
+.~*.xlsx*
+*-result.xml
+aclImdb/*
