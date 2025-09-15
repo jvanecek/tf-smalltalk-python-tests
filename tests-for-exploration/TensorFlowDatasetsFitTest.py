@@ -7,7 +7,7 @@ from tensorflow import keras
 
 tf.enable_v2_behavior()
 
-class ExamplesWithTensorFlowDatasets(unittest.TestCase):
+class TensorFlowDatasetsFitTest(unittest.TestCase):
     def testFitMNIST(self):
         (ds_train, ds_test), ds_info = tfds.load(
             'mnist',
